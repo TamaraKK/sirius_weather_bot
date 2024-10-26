@@ -90,7 +90,7 @@ func handleUpdates(bot *tgbotapi.BotAPI) {
 
 			sendWeather(bot, chatID, queryData)
 
-			msg := tgbotapi.NewMessage(chatID, "Частота обновлений изменена!")
+			msg := tgbotapi.NewMessage(chatID, "Изменена частота обновлений")
 			_, err = bot.Send(msg)
 			if err != nil {
 				log.Println("Error sending message:", err)

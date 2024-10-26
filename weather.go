@@ -34,7 +34,6 @@ func getCoordinates(city string) (*Coordinates, error) {
 		return nil, fmt.Errorf("city not found")
 	}
 
-	// Получаем широту и долготу как строки и конвертируем в float64
 	latStr := data[0]["lat"].(string)
 	lonStr := data[0]["lon"].(string)
 	latitude, err := strconv.ParseFloat(latStr, 64)
@@ -53,10 +52,10 @@ func getCoordinates(city string) (*Coordinates, error) {
 	return &coordinates, nil
 }
 
-func getWeatherFromOpenMeteo(latitude, longitude float64) (string, error) {
-	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%%2FMoscow&past_days=0&forecast_days=1&hourly=temperature_2m,precipitation&current_weather=true&windspeed_10m=true&winddirection_10m=true&shortwave_radiation=true&precipitation_probability=true&cloudcover=true&visibility=true&surface_pressure=true&snowfall=true&showers=true&thunderstorm=true&temperature_10m=true&winddirection_10m_dominant=true&windgusts_10m=true&apparent_temperature=true", latitude, longitude)
+func getWeatherFromOpenMeteo(latitude, longitude float64, city string) (string, error) {
+	url := fmt.Sprintf("https://api.open-meteo.com/v1/forecast?latitude=%f&longitude=%f&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe%%2FMoscow&current_weather=true", latitude, longitude)
 
-	log.Printf("Запрос к Open-Meteo: %s", url) // Логирование URL
+	// log.Printf("Запрос к Open-Meteo: %s", url) 
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -74,15 +73,19 @@ func getWeatherFromOpenMeteo(latitude, longitude float64) (string, error) {
 		return "", err
 	}
 
-	dailyData := data["daily"].(map[string]interface{})
-	temperatureMax := dailyData["temperature_2m_max"].([]interface{})[0].(float64)  // Изменено на float64
-	temperatureMin := dailyData["temperature_2m_min"].([]interface{})[0].(float64)  // Изменено на float64
-	precipitationSum := dailyData["precipitation_sum"].([]interface{})[0].(float64) // Изменено на float64
+	currentWeather := data["current_weather"].(map[string]interface{})
+	temperature := currentWeather["temperature"].(float64)
+	windSpeed := currentWeather["windspeed"].(float64)
 
-	message := fmt.Sprintf("🌤 Прогноз погоды:\n\n"+
-		"🌡 Максимальная температура: %.2f°C\n"+
-		"🌡 Минимальная температура: %.2f°C\n"+
-		"💧 Количество осадков: %.2f мм\n", temperatureMax, temperatureMin, precipitationSum)
+	dailyData := data["daily"].(map[string]interface{})
+	precipitationSum := dailyData["precipitation_sum"].([]interface{})[0].(float64)
+
+
+	message := fmt.Sprintf("🌤 Прогноз погоды для города: %s\n\n"+
+		"🌡 Текущая температура: %.1f°C\n"+
+		"💧 Количество осадков: %.1f мм\n"+
+		"🌬 Скорость ветра: %.1f м/с\n", city, temperature, precipitationSum, windSpeed)
+
 	return message, nil
 }
 
@@ -108,7 +111,7 @@ func sendWeather(bot *tgbotapi.BotAPI, chatID int64, frequency string) {
 		log.Printf("Ошибка при получении координат для города '%s': %s\n", city, err.Error())
 		return
 	}
-	weatherMessage, err := getWeatherFromOpenMeteo(coordinates.Latitude, coordinates.Longitude)
+	weatherMessage, err := getWeatherFromOpenMeteo(coordinates.Latitude, coordinates.Longitude, city)
 	if err != nil {
 		log.Printf("Ошибка при получении погоды для города '%s': %s\n", city, err.Error())
 		return
