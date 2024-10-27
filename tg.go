@@ -68,7 +68,6 @@ func handleUpdates(bot *tgbotapi.BotAPI) {
 				}
 				continue
 			}
-			// Продолжайте с остальной логикой
 
 			keyboard := tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
@@ -105,7 +104,6 @@ func handleUpdates(bot *tgbotapi.BotAPI) {
 				}
 				continue
 			}
-
 			sendWeather(bot, chatID, queryData)
 
 			msg := tgbotapi.NewMessage(chatID, "Изменена частота обновлений")
