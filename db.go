@@ -56,3 +56,8 @@ func updateFrequency(chatID int64, frequency string) error {
 	_, err := db.Exec("UPDATE users SET frequency = $1 WHERE chat_id = $2", frequency, chatID)
 	return err
 }
+
+func removeUser(chatID int64) error {
+	_, err := db.Exec("DELETE FROM users WHERE chat_id = $1", chatID)
+	return err
+}

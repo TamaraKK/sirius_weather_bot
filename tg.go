@@ -26,12 +26,30 @@ func handleUpdates(bot *tgbotapi.BotAPI) {
 
 	for update := range updates {
 		log.Printf("Получено обновление: %+v", update)
-
-		if update.Message != nil && update.Message.IsCommand() && update.Message.Command() == "start" {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет, это бот прогноза погоды. \nВведите название города:")
-			_, err := bot.Send(msg)
-			if err != nil {
-				log.Println("Error sending message:", err)
+		if update.Message != nil && update.Message.IsCommand() {
+			switch update.Message.Command() {
+			case "start":
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Привет, это бот прогноза погоды. \nВведите название города:")
+				_, err := bot.Send(msg)
+				if err != nil {
+					log.Println("Error sending message:", err)
+				}
+			case "stop":
+				err := removeUser(update.Message.Chat.ID)
+				if err != nil {
+					log.Println("Error removing user:", err)
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Произошла ошибка при остановке рассылки. Пожалуйста, попробуйте позже.")
+					_, err = bot.Send(msg)
+					if err != nil {
+						log.Println("Error sending error message:", err)
+					}
+					continue
+				}
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Вы успешно отписались от рассылки прогноза погоды.")
+				_, err = bot.Send(msg)
+				if err != nil {
+					log.Println("Error sending message:", err)
+				}
 			}
 			continue
 		}
@@ -60,7 +78,7 @@ func handleUpdates(bot *tgbotapi.BotAPI) {
 				),
 			)
 
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберите частоту обновлений:")
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Выберите частоту обновлений:\n\n(команда stop прекратит рассылку прогноза погоды)")
 			msg.ReplyMarkup = keyboard
 			_, err = bot.Send(msg)
 			if err != nil {
